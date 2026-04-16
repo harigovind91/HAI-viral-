@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAI Viral Global - World Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+    <div id="google_translate_element"></div>
+
+    <nav class="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-2xl font-black text-blue-500 tracking-tighter">HAI VIRAL</h1>
+        <div id="userCard" class="bg-slate-700 px-4 py-1 rounded-full border border-blue-500">
+            <span id="userName">Loading...</span>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div class="md:col-span-4 space-y-4">
+            <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                <h3 class="font-bold text-orange-400 mb-4 text-center">GO VIRAL PLANS</h3>
+                <div class="space-y-3">
+                    <button onclick="pay('Silver', 499)" class="w-full bg-slate-700 hover:bg-slate-600 p-3 rounded-xl flex justify-between"><span>Silver</span> <b>₹499</b></button>
+                    <button onclick="pay('Gold', 1999)" class="w-full bg-slate-700 hover:bg-slate-600 p-3 rounded-xl border border-yellow-500 flex justify-between"><span>Gold</span> <b>₹1999</b></button>
+                    <button onclick="pay('Diamond', 4999)" class="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded-xl flex justify-between"><span>Diamond</span> <b>₹4999</b></button>
+                </div>
+            </div>
+            <button class="w-full bg-green-600 py-3 rounded-xl font-bold">Download Global APK</button>
+        </div>
+
+        <div class="md:col-span-8 space-y-6">
+            <div class="bg-slate-800 p-4 rounded-3xl border border-slate-700">
+                <textarea id="postContent" class="w-full bg-transparent border-none focus:ring-0 text-lg h-24" placeholder="What is the world thinking?"></textarea>
+                <div class="flex justify-between items-center mt-4">
+                    <input type="file" id="postMedia" class="text-xs">
+                    <button onclick="publishPost()" class="bg-blue-500 px-8 py-2 rounded-full font-bold shadow-lg">VIRAL NOW</button>
+                </div>
+            </div>
+            <div id="globalFeed" class="space-y-4 pb-20"></div>
+        </div>
+    </div>
+
+    <script>
+        let user = { username: 'HariUser', plan: 'Free' };
+        const API = "http://localhost:8080/api";
+
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+        }
+
+        async function init() {
+            const res = await fetch(`${API}/user/auth`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user.username })
+            });
+            user = await res.json();
+            document.getElementById('userName').innerText = `${user.username} [${user.plan}]`;
+            loadFeed();
+        }
+
+        async function publishPost() {
+            const formData = new FormData();
+            formData.append('username', user.username);
+            formData.append('content', document.getElementById('postContent').value);
+            formData.append('media', document.getElementById('postMedia').files[0]);
+            formData.append('plan', user.plan);
+            
+            await fetch(`${API}/post/share`, { method: 'POST', body: formData });
+            alert("Post Published Worldwide!");
+            loadFeed();
+        }
+
+        async function loadFeed() {
+            const res = await fetch(`${API}/feed`);
+            const posts = await res.json();
+            document.getElementById('globalFeed').innerHTML = posts.map(p => `
+                <div class="bg-slate-800 p-6 rounded-3xl border ${p.isViral ? 'border-orange-500' : 'border-slate-700'}">
+                    <div class="flex justify-between items-center mb-3">
+                        <b class="text-blue-400">${p.username}</b>
+                        <span class="text-xs text-slate-500">${new Date(p.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <p class="text-lg mb-4">${p.content}</p>
+                    ${p.media ? `<img src="http://localhost:8080/uploads/${p.media}" class="rounded-2xl w-full mb-3">` : ''}
+                    <div class="flex gap-4 text-xs font-bold">
+                        <span class="text-green-400 font-mono">${p.views.toLocaleString()} VIEWS</span>
+                        <span class="text-slate-500">GLOBAL NODE</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function pay(p, amt) {
+            const upiId = amt > 2000 ? "harigovindsingh91-2@okaxis" : "harigovindsingh91-2@oksbi";
+            window.location.href = `upi://pay?pa=${upiId}&pn=HAIViral&am=${amt}&cu=INR`;
+        }
+
+        init();
+        setInterval(loadFeed, 30000);
+    </script>
+</body>
+</html>
+
